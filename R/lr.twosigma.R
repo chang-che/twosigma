@@ -19,17 +19,18 @@
 
 lr.twosigma<-function(count,mean_covar,zi_covar,contrast
                       ,mean_re=FALSE,zi_re=FALSE,
-                       id,adhoc=FALSE,adhoc_thresh=0.1
+                      id,adhoc=FALSE,adhoc_thresh=0.1
                       ,disp_covar=NULL
                       ,weights=rep(1,length(count))
                       ,control=glmmTMBControl())
-                      #,control = glmmTMBControl(optCtrl=list(iter.max=1e5,eval.max=1e5
-                       # ,step.max=.00001,step.min=.00001
-                      #  ,rel.tol=1e-5,x.tol=1e-5)))
-  {
+  #,control = glmmTMBControl(optCtrl=list(iter.max=1e5,eval.max=1e5
+  # ,step.max=.00001,step.min=.00001
+  #  ,rel.tol=1e-5,x.tol=1e-5)))
+{
+  msg <- list() # recording messages in this function
   check_twosigma_input(count,mean_covar,zi_covar
-    ,mean_re,zi_re
-    ,disp_covar,id=id,adhoc=adhoc)
+                       ,mean_re,zi_re
+                       ,disp_covar,id=id,adhoc=adhoc)
   count<-as.numeric(count)
   if(adhoc==TRUE){
     if(is.atomic(zi_covar)&length(zi_covar)==1){
@@ -38,19 +39,23 @@ lr.twosigma<-function(count,mean_covar,zi_covar,contrast
     if(p.val<adhoc_thresh){
       mean_re=TRUE
       zi_re=TRUE
-      message("adhoc method used to set both mean_re and zi_re to TRUE. Set adhoc=FALSE to customize mean_re and zi_re.")
+      #message("adhoc method used to set both mean_re and zi_re to TRUE. Set adhoc=FALSE to customize mean_re and zi_re.")
+      msg[['adhoc']] <- "adhoc method used to set both mean_re and zi_re to TRUE. Set adhoc=FALSE to customize mean_re and zi_re."
     }else{
       mean_re=FALSE
       zi_re=FALSE
-      message("adhoc method used to set both mean_re and zi_re to FALSE. Set adhoc=FALSE to customize user-inputted values for mean_re and zi_re.")
+      
+      #message("adhoc method used to set both mean_re and zi_re to FALSE. Set adhoc=FALSE to customize user-inputted values for mean_re and zi_re.")
+      msg[['adhoc']] <- "adhoc method used to set both mean_re and zi_re to FALSE. Set adhoc=FALSE to customize user-inputted values for mean_re and zi_re."
+      
     }
   }
-
+  
   formulas<-create_model_formulas(mean_covar,zi_covar
-    ,mean_form=NULL,zi_form=NULL
-    ,mean_re,zi_re
-    ,disp_covar)
-
+                                  ,mean_form=NULL,zi_form=NULL
+                                  ,mean_re,zi_re
+                                  ,disp_covar)
+  
   if(is.atomic(zi_covar)&length(zi_covar)==1){
     if(zi_covar==1 | zi_covar==0){
       stop("This function is meant for joint testing of a covariate when it is present in both components.")
@@ -67,23 +72,23 @@ lr.twosigma<-function(count,mean_covar,zi_covar,contrast
     }
   }
   if(is.character(contrast)){
-      #if(!is.vector(mean_covar)&!is.vector(zi_covar))
-      if(is.matrix(mean_covar)&is.matrix(zi_covar))
-      {
-        if(!(contrast%in%colnames(mean_covar) & contrast%in%colnames(zi_covar))){
-          stop("contrast not found in both matrices")
+    #if(!is.vector(mean_covar)&!is.vector(zi_covar))
+    if(is.matrix(mean_covar)&is.matrix(zi_covar))
+    {
+      if(!(contrast%in%colnames(mean_covar) & contrast%in%colnames(zi_covar))){
+        stop("contrast not found in both matrices")
       }
     }
   }
   fit_alt<-glmmTMB(formula=formulas$mean_form
-    ,ziformula=formulas$zi_form
-    ,weights=weights
-    ,dispformula = formulas$disp_form
-    ,family=nbinom2,verbose = F
-    ,control = control)
+                   ,ziformula=formulas$zi_form
+                   ,weights=weights
+                   ,dispformula = formulas$disp_form
+                   ,family=nbinom2,verbose = F
+                   ,control = control)
   #If numeric we are assuming that the variable is in the same position
   # need also to point out that users have some responsibilities here
-
+  
   if(is.numeric(contrast)){
     if(is.matrix(mean_covar)&is.matrix(zi_covar)){
       if(contrast>max(ncol(mean_covar),ncol(zi_covar))){
@@ -94,9 +99,9 @@ lr.twosigma<-function(count,mean_covar,zi_covar,contrast
       mean_covar<-1
       zi_covar<-1
       formulas<-create_model_formulas(mean_covar,zi_covar
-        ,mean_form=NULL,zi_form=NULL
-        ,mean_re,zi_re
-        ,disp_covar)
+                                      ,mean_form=NULL,zi_form=NULL
+                                      ,mean_re,zi_re
+                                      ,disp_covar)
       #formulas$mean_form<-as.formula(gsub("mean_covar","1",format(formulas$mean_form)))
       #formulas$zi_form<-as.formula(gsub("zi_covar","1",format(formulas$zi_form)))
     }
@@ -104,9 +109,9 @@ lr.twosigma<-function(count,mean_covar,zi_covar,contrast
       mean_covar<-mean_covar[,-contrast,drop=FALSE]
       zi_covar<-1
       formulas<-create_model_formulas(mean_covar,zi_covar
-        ,mean_form=NULL,zi_form=NULL
-        ,mean_re,zi_re
-        ,disp_covar)
+                                      ,mean_form=NULL,zi_form=NULL
+                                      ,mean_re,zi_re
+                                      ,disp_covar)
       #formulas$mean_form<-as.formula(gsub("mean_covar","mean_covar[,-contrast]",format(formulas$mean_form)))
       #formulas$zi_form<-as.formula(gsub("zi_covar","1",format(formulas$zi_form)))
     }
@@ -114,9 +119,9 @@ lr.twosigma<-function(count,mean_covar,zi_covar,contrast
       mean_covar<-1
       zi_covar<-zi_covar[,-contrast,drop=FALSE]
       formulas<-create_model_formulas(mean_covar,zi_covar
-        ,mean_form=NULL,zi_form=NULL
-        ,mean_re,zi_re
-        ,disp_covar)
+                                      ,mean_form=NULL,zi_form=NULL
+                                      ,mean_re,zi_re
+                                      ,disp_covar)
       #formulas$mean_form<-as.formula(gsub("mean_covar","1",format(formulas$mean_form)))
       #formulas$zi_form<-as.formula(gsub("zi_covar","zi_covar[,-contrast]",format(formulas$zi_form)))
     }
@@ -124,9 +129,9 @@ lr.twosigma<-function(count,mean_covar,zi_covar,contrast
       mean_covar<-mean_covar[,-contrast,drop=FALSE]
       zi_covar<-zi_covar[,-contrast,drop=FALSE]
       formulas<-create_model_formulas(mean_covar,zi_covar
-        ,mean_form=NULL,zi_form=NULL
-        ,mean_re,zi_re
-        ,disp_covar)
+                                      ,mean_form=NULL,zi_form=NULL
+                                      ,mean_re,zi_re
+                                      ,disp_covar)
       #formulas$mean_form<-as.formula(gsub("mean_covar","mean_covar[,-contrast]",format(formulas$mean_form)))
       #formulas$zi_form<-as.formula(gsub("zi_covar","zi_covar[,-contrast]",format(formulas$zi_form)))
     }
@@ -144,42 +149,45 @@ lr.twosigma<-function(count,mean_covar,zi_covar,contrast
       mean_covar<-1
     }
     if(is.matrix(zi_covar)){
-    index<-which(colnames(zi_covar)==contrast)
-    if(is.null(index)){
-      stop("Contrast Name not found in colnames of zi model covariate data matrix")
-    }
-    #formulas$zi_form<-as.formula(gsub("zi_covar","zi_covar[,-index]",format(formulas$zi_form)))
-    zi_covar<-zi_covar[,-index,drop=FALSE]
+      index<-which(colnames(zi_covar)==contrast)
+      if(is.null(index)){
+        stop("Contrast Name not found in colnames of zi model covariate data matrix")
+      }
+      #formulas$zi_form<-as.formula(gsub("zi_covar","zi_covar[,-index]",format(formulas$zi_form)))
+      zi_covar<-zi_covar[,-index,drop=FALSE]
     }
     if(is.vector(zi_covar)){
       #formulas$zi_form<-as.formula(gsub("zi_covar","1",format(formulas$zi_form)))
       zi_covar<-1
     }
     formulas<-create_model_formulas(mean_covar,zi_covar
-      ,mean_form=NULL,zi_form=NULL
-      ,mean_re,zi_re
-      ,disp_covar)
+                                    ,mean_form=NULL,zi_form=NULL
+                                    ,mean_re,zi_re
+                                    ,disp_covar)
   }
-
-fit_null<-glmmTMB(formula=formulas$mean_form
-    ,ziformula=formulas$zi_form
-    ,weights=weights
-    ,dispformula = formulas$disp_form
-    ,family=nbinom2,verbose = F
-    ,control = control)
-sum_null<-summary(fit_null)
-sum_alt<-summary(fit_alt)
-
-#if(is.character(contrast)){}
-names_null<-rownames(sum_null$coefficients$cond)
-names_alt<-rownames(sum_alt$coefficients$cond)
-
-est<-sum_alt$coefficients$cond[which(!names_alt%in%names_null),1]
-
-LR_stat<- as.numeric(-2*(summary(fit_null)$logLik-summary(fit_alt)$logLik))
-if(LR_stat<0 | (!fit_alt$sdr$pdHess) | (!fit_null$sdr$pdHess)){
-  LR_stat<-NA
-  message("LR stat set to NA, indicative of model specification or fitting problem")}
-p.val<-1-pchisq(LR_stat,df=2)
-return(list(fit_null=fit_null,fit_alt=fit_alt,LR_stat=LR_stat,LR_p.val=p.val,mean_comp_logFC=est))
-}
+  
+  fit_null<-glmmTMB(formula=formulas$mean_form
+                    ,ziformula=formulas$zi_form
+                    ,weights=weights
+                    ,dispformula = formulas$disp_form
+                    ,family=nbinom2,verbose = F
+                    ,control = control)
+  sum_null<-summary(fit_null)
+  sum_alt<-summary(fit_alt)
+  
+  #if(is.character(contrast)){}
+  names_null<-rownames(sum_null$coefficients$cond)
+  names_alt<-rownames(sum_alt$coefficients$cond)
+  
+  est<-sum_alt$coefficients$cond[which(!names_alt%in%names_null),1]
+  
+  LR_stat<- as.numeric(-2*(summary(fit_null)$logLik-summary(fit_alt)$logLik))
+  if(LR_stat<0 | (!fit_alt$sdr$pdHess) | (!fit_null$sdr$pdHess)){
+    LR_stat<-NA
+    #message("LR stat set to NA, indicative of model specification or fitting problem")
+    msg[['Model']] <- "LR stat set to NA, indicative of model specification or fitting problem"}
+    p.val<-1-pchisq(LR_stat,df=2)
+    return(list(fit_null=fit_null,fit_alt=fit_alt,LR_stat=LR_stat,LR_p.val=p.val,mean_comp_logFC=est,
+                messages = msg))
+  }
+  
