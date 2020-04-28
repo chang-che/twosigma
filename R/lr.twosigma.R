@@ -193,7 +193,7 @@ lr.twosigma<-function(count,mean_covar,zi_covar,contrast
      # fit_null=fit_null,fit_alt=fit_alt,
      # messages = msg,
       re = re, # indicate whether random intercept is included or not
-      LR_stat=LR_stat,LR_p.val=p.val,mean_comp_logFC=est,
+      LR_stat=LR_stat,LR_p.val=p.val,mean_comp_logFC=est
                 ))
   }
   
