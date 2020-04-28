@@ -37,11 +37,13 @@ lr.twosigma<-function(count,mean_covar,zi_covar,contrast
       if(zi_covar==0){stop("adhoc method only implemented when ZI model contains at minimum an intercept. Please either set adhoc=FALSE or specify at minimum an intercept in the ZI model.")}}
     p.val<-adhoc.twosigma(count=count,mean_covar=mean_covar,zi_covar = zi_covar,id=id,weights=weights)
     if(p.val<adhoc_thresh){
+      re = TRUE
       mean_re=TRUE
       zi_re=TRUE
       #message("adhoc method used to set both mean_re and zi_re to TRUE. Set adhoc=FALSE to customize mean_re and zi_re.")
       msg[['adhoc']] <- "adhoc method used to set both mean_re and zi_re to TRUE. Set adhoc=FALSE to customize mean_re and zi_re."
     }else{
+      re = FALSE
       mean_re=FALSE
       zi_re=FALSE
       
@@ -187,7 +189,11 @@ lr.twosigma<-function(count,mean_covar,zi_covar,contrast
     #message("LR stat set to NA, indicative of model specification or fitting problem")
     msg[['Model']] <- "LR stat set to NA, indicative of model specification or fitting problem"}
     p.val<-1-pchisq(LR_stat,df=2)
-    return(list(fit_null=fit_null,fit_alt=fit_alt,LR_stat=LR_stat,LR_p.val=p.val,mean_comp_logFC=est,
-                messages = msg))
+    return(list(
+     # fit_null=fit_null,fit_alt=fit_alt,
+     # messages = msg,
+      re = re, # indicate whether random intercept is included or not
+      LR_stat=LR_stat,LR_p.val=p.val,mean_comp_logFC=est,
+                ))
   }
   
